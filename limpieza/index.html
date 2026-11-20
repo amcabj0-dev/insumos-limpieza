@@ -102,6 +102,23 @@
   .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
   .stats div{background:#f3f7f6;border-radius:14px;padding:10px;text-align:center}
   .stats b{display:block;font-size:20px;color:var(--brand)} .stats span{font-size:11.5px;color:var(--muted)}
+  .overlay{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,#0f766e,#14a394);display:flex;align-items:center;justify-content:center;padding:24px}
+  .overlay[hidden]{display:none}
+  .login-card{background:#fff;border-radius:22px;padding:26px 22px;width:100%;max-width:380px;box-shadow:0 20px 50px rgba(0,0,0,.2);text-align:center}
+  .login-card .logo{width:64px;height:64px;border-radius:18px;background:var(--brand-soft);display:grid;place-items:center;margin:0 auto 12px}
+  .login-card h2{margin:0 0 4px;font-size:21px}
+  .login-card p{margin:0 0 18px;color:var(--muted);font-size:14px}
+  .login-card input{text-align:center;font-size:20px;letter-spacing:.08em}
+  .login-card .err{color:var(--bad);font-size:14px;min-height:20px;margin:8px 0}
+  .modal{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+  .modal[hidden]{display:none}
+  .sheet{background:#fff;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));width:100%;max-width:460px;text-align:center}
+  .sheet .big{font:700 30px/1.2 ui-monospace,Menlo,monospace;letter-spacing:.06em;background:var(--brand-soft);color:var(--brand);border-radius:14px;padding:16px;margin:12px 0;user-select:all}
+  .user-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;background:#f8faf9;border-radius:14px;margin-bottom:8px}
+  .user-row.off{opacity:.55}
+  .user-row .nm{font-weight:600}
+  .user-row .sub{font-size:12.5px;color:var(--muted)}
+  .user-row .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
   #toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 16px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(10px);background:#17201e;color:#fff;padding:12px 18px;border-radius:12px;font-size:14.5px;opacity:0;pointer-events:none;transition:all .2s;z-index:20;max-width:88vw;text-align:center}
   #toast.show{opacity:1;transform:translateX(-50%)}
 </style>
@@ -199,6 +216,16 @@
 
   <!-- LISTAS -->
   <section id="tab-listas">
+    <div class="card" id="card-usuarios">
+      <h2>Usuarios y claves</h2>
+      <p class="muted" style="margin-top:-6px">Creá un usuario por cada persona. El sistema le genera una clave única para entrar a la app. Si alguien deja de trabajar, desactivalo.</p>
+      <form id="f-usuario" class="addrow" autocomplete="off" style="margin-bottom:12px;flex-wrap:wrap">
+        <input name="nombre" placeholder="Nombre y apellido" required style="flex:1 1 100%">
+        <select name="rol" style="flex:1;margin-top:0"><option value="usuario">Personal</option><option value="admin">Admin</option></select>
+        <button type="submit">Crear</button>
+      </form>
+      <div id="list-usuarios"></div>
+    </div>
     <div class="card">
       <h2>Personal</h2>
       <div class="chips" id="chips-personal"></div>
@@ -231,6 +258,25 @@
   <option value="unidad"><option value="bidón"><option value="litro"><option value="paquete"><option value="rollo"><option value="aerosol"><option value="par"><option value="caja"><option value="pack">
 </datalist>
 <div id="toast"></div>
+<div class="overlay" id="login" hidden>
+  <form class="login-card" id="f-login" autocomplete="off">
+    <div class="logo"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4H9z"/><path d="M8 7h8l1 4v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-9z"/><path d="M10 14h4"/></svg></div>
+    <h2>Insumos de limpieza</h2>
+    <p>Ingresá tu clave personal</p>
+    <input id="login-clave" type="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" placeholder="xxxx-xxxx" required>
+    <div class="err" id="login-err"></div>
+    <button class="primary" type="submit" id="login-btn">Entrar</button>
+    <p style="margin:14px 0 0;font-size:12.5px">¿No tenés clave? Pedísela al supervisor.</p>
+  </form>
+</div>
+<div class="modal" id="modal-clave" hidden>
+  <div class="sheet">
+    <h2 style="margin:0;font-size:18px" id="mc-titulo">Clave creada</h2>
+    <div class="big" id="mc-clave"></div>
+    <p class="muted" style="margin:0 0 14px">Anotala o mandásela a la persona. Por seguridad <b>no se vuelve a mostrar</b>; si se pierde, generá una nueva.</p>
+    <div class="row-actions"><button class="small" id="mc-copiar">Copiar</button><button class="primary" id="mc-ok" style="flex:2">Listo</button></div>
+  </div>
+</div>
 </div>
 
 <script>
@@ -354,11 +400,11 @@ const API_URL = "https://script.google.com/macros/s/AKfycbypf92GxvkESgLjk4CkHtQY
   }
   function handleWriteError(e){
     console.error(e);
-    if(e && e.code === "clave"){ pedirClave("La clave no es correcta."); }
+    if(e && e.code === "clave"){ pedirClave("La clave no es correcta."); } else if(e && e.code === "permiso"){ toast("Eso solo lo puede hacer el administrador."); }
     else toast("No se pudo guardar. Revisá la conexión y probá de nuevo.");
   }
   function applyWriteState(){
-    $$("form button[type=submit], [data-add], [data-addline]").forEach(b => b.disabled = !canWrite || !db);
+    $$("form:not(#f-login) button[type=submit], [data-add], [data-addline]").forEach(b => b.disabled = !canWrite || !db);
   }
 
   $("#f-entrega").addEventListener("submit", async ev => {
@@ -427,7 +473,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbypf92GxvkESgLjk4CkHtQY
 
   // ---------- render ----------
   const itemsHtml = items => `<ul>${(items||[]).map(it => `<li>${esc(fmtN(num(it.cantidad)))} ${esc(it.unidad||"")} — ${esc(it.articulo)}</li>`).join("")}</ul>`;
-  const delBtn = path => canWrite && db ? `<button class="small danger" data-del="${esc(path)}">Borrar</button>` : "";
+  const delBtn = path => canWrite && db && rol === "admin" ? `<button class="small danger" data-del="${esc(path)}">Borrar</button>` : "";
 
   function renderEntregas(){
     const rows = entregasFiltradas();
@@ -512,7 +558,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbypf92GxvkESgLjk4CkHtQY
     if(loading) return loading;
     loading = (async () => {
       try {
-        const j = await api("listar");
+        const j = await api("listar"); aplicarRol(j.yo); usuariosLista = j.usuarios || []; renderUsuarios();
         state.entregas = (j.entregas||[]).sort(byFecha);
         state.ingresos = (j.ingresos||[]).sort(byFecha);
         const L = j.listas || {};
@@ -520,26 +566,81 @@ const API_URL = "https://script.google.com/macros/s/AKfycbypf92GxvkESgLjk4CkHtQY
         db = true; banner("",""); firstLoad = false; renderAll();
       } catch(e){
         console.error(e);
-        if(e && e.code === "clave") pedirClave(getClave() ? "La clave no es correcta." : "");
+        if(e && e.code === "clave"){ banner("",""); db = false; pedirClave(getClave() ? "La clave no es correcta o fue desactivada." : ""); }
         else if(firstLoad) { banner("bad","No se pudo conectar con la planilla. Revisá la conexión a internet."); }
         else toast("Sin conexión: los datos pueden no estar actualizados.");
       } finally { loading = null; }
     })();
     return loading;
   }
-  function pedirClave(msg){
-    $("#banner").innerHTML = `<div class="banner warn"><b>Ingresá la clave de acceso</b>${msg?`<br>${esc(msg)}`:""}
-      <div class="addrow" style="margin-top:8px"><input id="clave-in" type="password" autocomplete="current-password" placeholder="Clave"><button id="clave-ok">Entrar</button></div></div>`;
-    const go = () => { setClave(clean($("#clave-in").value)); banner("ok","Conectando…"); load(); };
-    $("#clave-ok").addEventListener("click", go);
-    $("#clave-in").addEventListener("keydown", e => { if(e.key==="Enter") go(); });
+  var rol = "usuario"; let yo = null; let usuariosLista = [];
+  function aplicarRol(datos){
+    yo = datos || null; rol = yo && yo.rol === "admin" ? "admin" : "usuario";
+    const adm = rol === "admin";
+    ["ingresos","listas"].forEach(t => { const b = document.querySelector(`nav.tabs button[data-tab="${t}"]`); if(b) b.style.display = adm ? "" : "none"; });
+    const act = document.querySelector("nav.tabs button.active");
+    if(!adm && act && /ingresos|listas/.test(act.dataset.tab)) document.querySelector('nav.tabs button[data-tab="entregas"]').click();
+    document.querySelectorAll("[data-export]").forEach(b => b.style.display = adm ? "" : "none");
+    const s = document.getElementById("subtitle");
+    if(s && yo) s.innerHTML = `Hola, ${esc(yo.nombre)}${adm ? " (admin)" : ""} · <a href="#" id="salir" style="color:#fff">salir</a>`;
+    const x = document.getElementById("salir"); if(x) x.onclick = e => { e.preventDefault(); setClave(""); location.reload(); };
+    const f = $("#f-entrega");
+    if(yo && !adm){ if(!f.recibe.value) f.recibe.value = yo.nombre; f.recibe.readOnly = true; }
+    else f.recibe.readOnly = false;
   }
+  function pedirClave(msg){
+    $("#login").hidden = false; $("#login-err").textContent = msg || "";
+    setTimeout(() => $("#login-clave").focus(), 50);
+  }
+  $("#f-login").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const c = clean($("#login-clave").value).toLowerCase(); if(!c) return;
+    setClave(c); $("#login-btn").disabled = true; $("#login-err").textContent = "Entrando…";
+    await load();
+    $("#login-btn").disabled = false;
+    if(db && yo){ $("#login").hidden = true; $("#login-clave").value = ""; toast(`Bienvenido/a, ${yo.nombre}`); }
+  });
+
+  // ---------- usuarios (admin) ----------
+  function mostrarClave(titulo, clave){
+    $("#mc-titulo").textContent = titulo; $("#mc-clave").textContent = clave; $("#modal-clave").hidden = false;
+  }
+  $("#mc-ok").addEventListener("click", () => { $("#modal-clave").hidden = true; $("#mc-clave").textContent = ""; });
+  $("#mc-copiar").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("#mc-clave").textContent); toast("Clave copiada"); } catch(e){ toast("Mantené apretada la clave para copiarla"); } });
+  function renderUsuarios(){
+    const el = $("#list-usuarios"); if(!el) return;
+    el.innerHTML = usuariosLista.length ? usuariosLista.map(u => `
+      <div class="user-row ${u.activo ? "" : "off"}"><div><div class="nm">${esc(u.nombre)}</div>
+        <div class="sub">${u.rol === "admin" ? "Admin" : "Personal"} · ${u.activo ? "Activo" : "Desactivado"}</div></div>
+        <div class="acts"><button class="small" data-uclave="${esc(u.id)}">Nueva clave</button>
+        <button class="small ${u.activo ? "danger" : ""}" data-uact="${esc(u.id)}" data-v="${u.activo ? "0" : "1"}">${u.activo ? "Desactivar" : "Activar"}</button></div></div>`).join("")
+      : `<div class="empty">Todavía no hay usuarios. Creá el primero arriba.</div>`;
+  }
+  $("#f-usuario").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const f = ev.target, nombre = clean(f.nombre.value); if(!nombre) return;
+    const btn = f.querySelector("button"); btn.disabled = true;
+    try { const r = await api("crearUsuario", { nombre, rol: f.rol.value }); f.reset(); mostrarClave(`Clave de ${r.nombre}`, r.clave); load(); }
+    catch(e){ handleWriteError(e); }
+    btn.disabled = false;
+  });
+  document.addEventListener("click", async ev => {
+    const c = ev.target.closest("[data-uclave]");
+    if(c){
+      if(!c.classList.contains("confirm")){ c.classList.add("confirm"); c.textContent = "¿Seguro? La anterior deja de andar"; setTimeout(()=>{ c.classList.remove("confirm"); c.textContent="Nueva clave"; }, 3500); return; }
+      c.disabled = true;
+      try { const r = await api("nuevaClave", { id: c.dataset.uclave }); mostrarClave(`Nueva clave de ${r.nombre}`, r.clave); load(); } catch(e){ handleWriteError(e); c.disabled = false; }
+      return;
+    }
+    const a = ev.target.closest("[data-uact]");
+    if(a){ a.disabled = true; try { await api("activarUsuario", { id: a.dataset.uact, activo: a.dataset.v === "1" }); toast(a.dataset.v === "1" ? "Usuario activado" : "Usuario desactivado"); load(); } catch(e){ handleWriteError(e); a.disabled = false; } }
+  });
 
   resetForm("entrega"); resetForm("ingreso"); renderAll();
   if(!/^https:\/\/script\.google\.com\//.test(API_URL)){
     banner("bad","Falta configurar la conexión: pegá la URL de Apps Script en API_URL, al principio del código de index.html.");
   } else {
-    banner("ok","Conectando…"); load();
+    if(getClave()){ banner("ok","Conectando…"); load(); } else pedirClave("");
     setInterval(() => { if(document.visibilityState === "visible" && db) load(); }, 30000);
     document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && db) load(); });
   }
