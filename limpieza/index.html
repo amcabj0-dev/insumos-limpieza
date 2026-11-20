@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Insumos">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Control de insumos de limpieza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef2f1; --card:#fff; --ink:#17201e; --muted:#6b7773; --line:#e2e8e6;
+    --brand:#0f766e; --brand-2:#14a394; --brand-soft:#e2f3ef;
+    --warn:#b45309; --warn-soft:#fdf1e2; --bad:#c62828; --bad-soft:#fde9e9;
+    --radius:16px; --tabh:64px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:#cfd8d6;color:var(--ink);font:16px/1.45 Inter,system-ui,sans-serif}
+  .app{max-width:460px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;box-shadow:0 0 40px rgba(0,0,0,.12)}
+  header.appbar{position:sticky;top:0;z-index:6;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;display:flex;align-items:center;gap:12px}
+  header.appbar .logo{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none}
+  header.appbar h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+  header.appbar p{margin:0;opacity:.85;font-size:12.5px}
+  nav.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:460px;z-index:6;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabs button{flex:1;border:0;background:none;height:var(--tabh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:600 11.5px Inter,sans-serif;color:var(--muted);cursor:pointer;border-radius:0}
+  nav.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  nav.tabs button.active{color:var(--brand)}
+  nav.tabs button.active .ic{background:var(--brand-soft)}
+  nav.tabs .ic{padding:3px 16px;border-radius:99px;display:grid;place-items:center;transition:background .15s}
+  main{padding:14px 12px calc(var(--tabh) + 30px + env(safe-area-inset-bottom))}
+  section{display:none} section.active{display:block;animation:fade .18s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  .card h2{margin:0 0 12px;font-size:16.5px}
+  .grid{display:grid;grid-template-columns:1fr;gap:0}
+  label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px}
+  input,select,textarea{display:block;width:100%;margin-top:5px;padding:13px 13px;border:1.5px solid var(--line);border-radius:12px;font:16px Inter,sans-serif;color:var(--ink);background:#f8faf9;-webkit-appearance:none;appearance:none;min-height:48px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);background:#fff}
+  .lines{border-radius:14px;padding:12px;margin:2px 0 12px;background:#f3f7f6}
+  .lines .lh{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px}
+  .line{display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;align-items:end;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .line:last-child{border-bottom:0}
+  .line .art{grid-column:1 / -1}
+  .line input{margin-top:5px;background:#fff}
+  .line .hint{grid-column:1 / -1;font-size:12.5px;color:var(--brand);font-weight:600;margin-top:-2px}
+  .line .hint:empty{display:none}
+  .line .hint.bad{color:var(--bad)}
+  button{font:600 15px Inter,sans-serif;cursor:pointer;border-radius:12px}
+  .primary{background:var(--brand);color:#fff;border:0;padding:15px 18px;width:100%;font-size:16px;min-height:52px;box-shadow:0 4px 12px rgba(15,118,110,.28)}
+  .primary:active{transform:scale(.98)}
+  .primary:disabled{opacity:.5;box-shadow:none}
+  .ghost{background:#fff;border:1.5px dashed #b9cbc7;color:var(--brand);padding:12px;width:100%}
+  .icon{background:#fff;border:1.5px solid var(--line);color:var(--muted);width:44px;height:48px;padding:0;font-size:20px}
+  .small{background:#f3f7f6;border:0;color:var(--ink);padding:9px 13px;font-size:13.5px}
+  .small.danger{color:var(--bad);background:var(--bad-soft)}
+  .small.confirm{background:var(--bad);color:#fff}
+  details.filt{margin-bottom:8px}
+  details.filt summary{list-style:none;cursor:pointer;font-weight:600;font-size:14px;color:var(--brand);padding:10px 12px;background:var(--brand-soft);border-radius:12px;display:flex;justify-content:space-between}
+  details.filt summary::-webkit-details-marker{display:none}
+  details.filt summary::after{content:"▾"} details.filt[open] summary::after{content:"▴"}
+  .filters{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;padding-top:10px}
+  .filters label.full{grid-column:1 / -1}
+  .row-actions{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+  .row-actions .small{flex:1}
+  .rec{background:#f8faf9;border-radius:14px;padding:12px 13px;margin-bottom:8px}
+  .rec .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .rec .who{font-weight:700}
+  .rec .meta{font-size:13px;color:var(--muted);margin-top:2px}
+  .rec ul{margin:8px 0 0;padding-left:18px;font-size:14.5px}
+  .rec .obs{font-size:13px;color:var(--muted);font-style:italic;margin-top:4px}
+  .pill{display:inline-block;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;margin-top:4px}
+  .stock-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 13px;border-radius:14px;background:#f8faf9;margin-bottom:8px}
+  .stock-item .nm{font-weight:600;font-size:14.5px}
+  .stock-item .sub{font-size:12.5px;color:var(--muted)}
+  .stock-item .qty{text-align:right;flex:none}
+  .stock-item .qty b{display:block;font-size:20px;font-variant-numeric:tabular-nums;color:var(--brand)}
+  .stock-item .qty span{font-size:12px;color:var(--muted)}
+  .stock-item.low{background:var(--warn-soft)} .stock-item.low .qty b{color:var(--warn)}
+  .stock-item.zero{background:var(--bad-soft)} .stock-item.zero .qty b{color:var(--bad)}
+  .summary{background:var(--brand-soft);border-radius:14px;padding:12px;margin:4px 0 10px;font-size:14px}
+  .summary b{color:var(--brand)}
+  .summary ul{margin:4px 0 0;padding-left:18px}
+  .empty{color:var(--muted);text-align:center;padding:24px 8px}
+  .banner{padding:11px 13px;border-radius:12px;margin-bottom:12px;font-size:14px}
+  .banner.warn{background:var(--warn-soft);color:var(--warn)}
+  .banner.bad{background:var(--bad-soft);color:var(--bad)}
+  .banner.ok{background:var(--brand-soft);color:var(--brand)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#f3f7f6;border-radius:99px;padding:6px 6px 6px 12px;font-size:14px}
+  .chip button{border:0;background:#e2e8e6;color:var(--muted);font-size:14px;width:24px;height:24px;border-radius:99px;padding:0;line-height:1}
+  .addrow{display:flex;gap:8px}
+  .addrow input{margin-top:0}
+  .addrow button{white-space:nowrap;padding:0 16px;background:var(--brand);color:#fff;border:0}
+  .muted{color:var(--muted);font-size:13px}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+  .stats div{background:#f3f7f6;border-radius:14px;padding:10px;text-align:center}
+  .stats b{display:block;font-size:20px;color:var(--brand)} .stats span{font-size:11.5px;color:var(--muted)}
+  #toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 16px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(10px);background:#17201e;color:#fff;padding:12px 18px;border-radius:12px;font-size:14.5px;opacity:0;pointer-events:none;transition:all .2s;z-index:20;max-width:88vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="appbar"><div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4H9z"/><path d="M8 7h8l1 4v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-9z"/><path d="M10 14h4"/></svg></div><div><h1>Insumos de limpieza</h1><p id="subtitle">Control de entregas y stock</p></div></header>
+<nav class="tabs"><button data-tab="entregas" class="active"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></span>Entregas</button><button data-tab="ingresos"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v11"/><path d="m7 9 5 5 5-5"/><path d="M4 17v3h16v-3"/></svg></span>Ingresos</button><button data-tab="stock"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 8 12 3l9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>Stock</button><button data-tab="listas"><span class="ic"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></span>Listas</button></nav>
+
+<main>
+  <div id="banner"></div>
+
+  <!-- ENTREGAS -->
+  <section id="tab-entregas" class="active">
+    <div class="card">
+      <h2>Nueva entrega al personal</h2>
+      <form id="f-entrega" autocomplete="off">
+        <div class="grid">
+          <label>Fecha y hora<input type="datetime-local" name="fecha" required></label>
+          <label>Entrega (supervisor)<input name="entrega" list="dl-personal" required placeholder="Ej: Miguel Luquez"></label>
+          <label>Recibe<input name="recibe" list="dl-personal" required placeholder="Ej: Daniel"></label>
+          <label>Sector a limpiar<input name="sector" list="dl-sectores" required placeholder="Ej: Planta baja, baños"></label>
+        </div>
+        <div class="lines"><div class="lh">Artículos entregados</div><div id="lines-entrega"></div>
+          <button type="button" class="ghost" data-addline="entrega">+ Agregar otro artículo</button></div>
+        <label>Observaciones (opcional)<textarea name="obs" rows="2"></textarea></label>
+        <button class="primary" type="submit">Guardar entrega</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Historial de entregas</h2>
+      <details class="filt"><summary>Filtrar</summary><div class="filters">
+        <label class="full">Persona<input id="fe-persona" list="dl-personal" placeholder="Todas"></label>
+        <label>Sector<input id="fe-sector" list="dl-sectores" placeholder="Todos"></label>
+        <label>Artículo<input id="fe-articulo" list="dl-articulos" placeholder="Todos"></label>
+        <label>Desde<input id="fe-desde" type="date"></label>
+        <label>Hasta<input id="fe-hasta" type="date"></label>
+      </div></details>
+      <div class="row-actions">
+        <button class="small" id="fe-limpiar">Limpiar filtros</button>
+        <button class="small" data-export="entregas">Exportar a Excel</button>
+      </div>
+      <div id="sum-entregas"></div>
+      <div id="list-entregas"></div>
+    </div>
+  </section>
+
+  <!-- INGRESOS -->
+  <section id="tab-ingresos">
+    <div class="card">
+      <h2>Nuevo ingreso (remito del proveedor)</h2>
+      <form id="f-ingreso" autocomplete="off">
+        <div class="grid">
+          <label>Fecha<input type="date" name="fecha" required></label>
+          <label>Proveedor<input name="proveedor" list="dl-proveedores" required placeholder="Ej: Limpi Hogar"></label>
+          <label>N° de remito<input name="remito" placeholder="Ej: X00000025"></label>
+          <label>Recibió<input name="recibio" list="dl-personal" placeholder="Ej: Miguel Luquez"></label>
+        </div>
+        <div class="lines"><div class="lh">Artículos recibidos</div><div id="lines-ingreso"></div>
+          <button type="button" class="ghost" data-addline="ingreso">+ Agregar otro artículo</button></div>
+        <label>Observaciones (opcional)<textarea name="obs" rows="2"></textarea></label>
+        <button class="primary" type="submit">Guardar ingreso</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Historial de ingresos</h2>
+      <details class="filt"><summary>Filtrar</summary><div class="filters">
+        <label class="full">Proveedor<input id="fi-proveedor" list="dl-proveedores" placeholder="Todos"></label>
+        <label class="full">Artículo<input id="fi-articulo" list="dl-articulos" placeholder="Todos"></label>
+        <label>Desde<input id="fi-desde" type="date"></label>
+        <label>Hasta<input id="fi-hasta" type="date"></label>
+      </div></details>
+      <div class="row-actions">
+        <button class="small" id="fi-limpiar">Limpiar filtros</button>
+        <button class="small" data-export="ingresos">Exportar a Excel</button>
+      </div>
+      <div id="list-ingresos"></div>
+    </div>
+  </section>
+
+  <!-- STOCK -->
+  <section id="tab-stock">
+    <div class="card">
+      <h2>Stock disponible</h2>
+      <div class="stats" id="stats"></div>
+      <p class="muted" style="margin-top:-6px">Se calcula solo: todo lo que ingresó menos todo lo que se entregó al personal.</p>
+      <div class="filters">
+        <label>Buscar artículo<input id="fs-q" placeholder="Ej: lavandina"></label>
+        <label>Avisar cuando quede<input id="fs-min" type="number" min="0" step="any" value="2"></label>
+      </div>
+      <div class="row-actions"><button class="small" data-export="stock">Exportar a Excel</button></div>
+      <div id="stock-table"></div>
+    </div>
+  </section>
+
+  <!-- LISTAS -->
+  <section id="tab-listas">
+    <div class="card">
+      <h2>Personal</h2>
+      <div class="chips" id="chips-personal"></div>
+      <div class="addrow"><input id="add-personal" placeholder="Nombre y apellido"><button data-add="personal">Agregar</button></div>
+    </div>
+    <div class="card">
+      <h2>Sectores</h2>
+      <div class="chips" id="chips-sectores"></div>
+      <div class="addrow"><input id="add-sectores" placeholder="Ej: Aulas 1er piso"><button data-add="sectores">Agregar</button></div>
+    </div>
+    <div class="card">
+      <h2>Proveedores</h2>
+      <div class="chips" id="chips-proveedores"></div>
+      <div class="addrow"><input id="add-proveedores" placeholder="Nombre del proveedor"><button data-add="proveedores">Agregar</button></div>
+    </div>
+    <div class="card">
+      <h2>Artículos</h2>
+      <p class="muted" style="margin-top:-6px">Cada artículo tiene su unidad (bidón, paquete, unidad…). Las entregas se cargan en esa misma unidad para que el stock cierre.</p>
+      <div class="chips" id="chips-articulos"></div>
+      <div class="addrow"><input id="add-articulos" placeholder="Nombre del artículo"><input id="add-articulos-u" list="dl-unidades" placeholder="Unidad" style="max-width:130px"><button data-add="articulos">Agregar</button></div>
+    </div>
+  </section>
+</main>
+
+<datalist id="dl-personal"></datalist>
+<datalist id="dl-sectores"></datalist>
+<datalist id="dl-proveedores"></datalist>
+<datalist id="dl-articulos"></datalist>
+<datalist id="dl-unidades">
+  <option value="unidad"><option value="bidón"><option value="litro"><option value="paquete"><option value="rollo"><option value="aerosol"><option value="par"><option value="caja"><option value="pack">
+</datalist>
+<div id="toast"></div>
+</div>
+
+<script>
+// =====================================================================
+//  CONFIGURACIÓN: pegá acá la URL de la "Aplicación web" de Apps Script
+// =====================================================================
+const API_URL = "PEGAR_ACA_LA_URL_DE_APPS_SCRIPT";
+// =====================================================================
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const norm = s => String(s ?? "").trim().replace(/\s+/g," ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const clean = s => String(s ?? "").trim().replace(/\s+/g," ");
+  const num = v => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : 0; };
+  const fmtN = n => (Math.round(n*100)/100).toLocaleString("es-AR");
+  const pad = n => String(n).padStart(2,"0");
+  const nowLocal = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const today = () => nowLocal().slice(0,10);
+  const fmtDate = s => { if(!s) return ""; const [d,t] = s.split("T"); const [y,m,dd] = d.split("-"); return `${dd}/${m}/${y}` + (t ? ` ${t.slice(0,5)}` : ""); };
+
+  let db = false, canWrite = true;
+  const getClave = () => { try { return localStorage.getItem("insumos-clave") || ""; } catch(e){ return ""; } };
+  const setClave = v => { try { localStorage.setItem("insumos-clave", v); } catch(e){} };
+  async function api(action, payload = {}){
+    const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, clave: getClave(), ...payload }) });
+    let j; try { j = await r.json(); } catch(e){ throw { code: "red" }; }
+    if(!j.ok) throw { code: j.error || "error", message: j.error };
+    return j;
+  }
+  const state = { ingresos: [], entregas: [], listas: { personal: [], sectores: [], proveedores: [], articulos: [] } };
+  let listasVersionLoaded = false;
+
+  function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2600); }
+  function banner(kind, msg){ $("#banner").innerHTML = msg ? `<div class="banner ${kind}">${esc(msg)}</div>` : ""; }
+
+  // ---------- tabs ----------
+  $$("nav.tabs button").forEach(b => b.addEventListener("click", () => {
+    $$("nav.tabs button").forEach(x => x.classList.toggle("active", x===b));
+    $$("main section").forEach(s => s.classList.toggle("active", s.id === "tab-"+b.dataset.tab));
+    window.scrollTo(0,0);
+    try { localStorage.setItem("insumos-tab", b.dataset.tab); } catch(e){}
+  }));
+  try { const t = localStorage.getItem("insumos-tab"); if(t){ const b=$(`nav.tabs button[data-tab="${t}"]`); b && b.click(); } } catch(e){}
+
+  // ---------- catálogo ----------
+  function findArticulo(name){ const k = norm(name); return state.listas.articulos.find(a => norm(a.nombre) === k); }
+  function allArticulos(){
+    const map = new Map();
+    state.listas.articulos.forEach(a => map.set(norm(a.nombre), {nombre:a.nombre, unidad:a.unidad||"unidad"}));
+    [...state.ingresos, ...state.entregas].forEach(r => (r.items||[]).forEach(it => {
+      const k = norm(it.articulo); if(k && !map.has(k)) map.set(k, {nombre: it.articulo, unidad: it.unidad||"unidad"});
+    }));
+    return [...map.values()].sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  }
+  function stockMap(){
+    const m = new Map();
+    allArticulos().forEach(a => m.set(norm(a.nombre), {...a, entro:0, salio:0}));
+    state.ingresos.forEach(r => (r.items||[]).forEach(it => { const e=m.get(norm(it.articulo)); if(e) e.entro += num(it.cantidad); }));
+    state.entregas.forEach(r => (r.items||[]).forEach(it => { const e=m.get(norm(it.articulo)); if(e) e.salio += num(it.cantidad); }));
+    return m;
+  }
+  function fillDatalists(){
+    const opt = arr => arr.map(v => `<option value="${esc(v)}">`).join("");
+    const uniq = arr => [...new Map(arr.filter(Boolean).map(v=>[norm(v),clean(v)])).values()].sort((a,b)=>a.localeCompare(b,"es"));
+    const L = state.listas;
+    $("#dl-personal").innerHTML = opt(uniq([...L.personal, ...state.entregas.flatMap(e=>[e.entrega,e.recibe]), ...state.ingresos.map(i=>i.recibio)]));
+    $("#dl-sectores").innerHTML = opt(uniq([...L.sectores, ...state.entregas.map(e=>e.sector)]));
+    $("#dl-proveedores").innerHTML = opt(uniq([...L.proveedores, ...state.ingresos.map(i=>i.proveedor)]));
+    $("#dl-articulos").innerHTML = opt(allArticulos().map(a=>a.nombre));
+  }
+
+  // ---------- líneas de artículos ----------
+  function addLine(kind, data={}){
+    const wrap = $("#lines-"+kind);
+    const div = document.createElement("div");
+    div.className = "line";
+    div.innerHTML = `
+      <label class="art" style="margin:0">Artículo<input class="l-art" list="dl-articulos" required value="${esc(data.articulo||"")}" placeholder="Elegí o escribí"></label>
+      <label style="margin:0">Cantidad<input class="l-cant" type="number" min="0" step="any" inputmode="decimal" required value="${esc(data.cantidad||"")}"></label>
+      <label style="margin:0">Unidad<input class="l-uni" list="dl-unidades" value="${esc(data.unidad||"")}" placeholder="unidad"></label>
+      <button type="button" class="icon" title="Quitar">×</button>
+      <div class="hint"></div>`;
+    const art = div.querySelector(".l-art"), uni = div.querySelector(".l-uni"), cant = div.querySelector(".l-cant"), hint = div.querySelector(".hint");
+    const refresh = () => {
+      const a = findArticulo(art.value) || allArticulos().find(x => norm(x.nombre)===norm(art.value));
+      if(a && !uni.value) uni.value = a.unidad || "unidad";
+      if(kind === "entrega" && a){
+        const s = stockMap().get(norm(a.nombre)); const disp = s ? s.entro - s.salio : 0;
+        const after = disp - num(cant.value);
+        hint.textContent = `Disponible: ${fmtN(disp)} ${a.unidad||""}` + (cant.value ? ` · quedan ${fmtN(after)}` : "");
+        hint.classList.toggle("bad", after < 0);
+      } else hint.textContent = "";
+    };
+    art.addEventListener("change", () => { uni.value = ""; refresh(); });
+    art.addEventListener("input", refresh);
+    cant.addEventListener("input", refresh);
+    div.querySelector(".icon").addEventListener("click", () => { if(wrap.children.length > 1) div.remove(); else { art.value=""; cant.value=""; uni.value=""; hint.textContent=""; } });
+    wrap.appendChild(div);
+    refresh();
+    return div;
+  }
+  $$("[data-addline]").forEach(b => b.addEventListener("click", () => addLine(b.dataset.addline).querySelector(".l-art").focus()));
+  function readLines(kind){
+    return $$(`#lines-${kind} .line`).map(l => {
+      let articulo = clean(l.querySelector(".l-art").value);
+      const a = findArticulo(articulo); if(a) articulo = a.nombre;
+      return { articulo, cantidad: num(l.querySelector(".l-cant").value), unidad: clean(l.querySelector(".l-uni").value) || (a && a.unidad) || "unidad" };
+    }).filter(it => it.articulo && it.cantidad > 0);
+  }
+  function resetForm(kind){
+    const f = $("#f-"+kind); f.reset();
+    $("#lines-"+kind).innerHTML = ""; addLine(kind);
+    if(kind==="entrega"){ f.fecha.value = nowLocal(); try{ const s=localStorage.getItem("insumos-entrega"); if(s) f.entrega.value=s; }catch(e){} }
+    else { f.fecha.value = today(); }
+  }
+
+  // ---------- guardar ----------
+  async function listaCambio(action, data){
+    try { await api(action, data); await load(); } catch(e){ handleWriteError(e); }
+  }
+  function handleWriteError(e){
+    console.error(e);
+    if(e && e.code === "clave"){ pedirClave("La clave no es correcta."); }
+    else toast("No se pudo guardar. Revisá la conexión y probá de nuevo.");
+  }
+  function applyWriteState(){
+    $$("form button[type=submit], [data-add], [data-addline]").forEach(b => b.disabled = !canWrite || !db);
+  }
+
+  $("#f-entrega").addEventListener("submit", async ev => {
+    ev.preventDefault(); if(!db) return;
+    const f = ev.target, items = readLines("entrega");
+    if(!items.length){ toast("Agregá al menos un artículo con cantidad."); return; }
+    const rec = { fecha: f.fecha.value, entrega: clean(f.entrega.value), recibe: clean(f.recibe.value), sector: clean(f.sector.value), items, obs: clean(f.obs.value), creado: new Date().toISOString() };
+    const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+    try {
+      await api("agregarEntrega", { registro: rec });
+      try{ localStorage.setItem("insumos-entrega", rec.entrega); }catch(e){}
+      resetForm("entrega"); toast(`Entrega a ${rec.recibe} guardada ✓`);
+      load();
+    } catch(e){ handleWriteError(e); }
+    btn.disabled = !canWrite;
+  });
+  $("#f-ingreso").addEventListener("submit", async ev => {
+    ev.preventDefault(); if(!db) return;
+    const f = ev.target, items = readLines("ingreso");
+    if(!items.length){ toast("Agregá al menos un artículo con cantidad."); return; }
+    const rec = { fecha: f.fecha.value, proveedor: clean(f.proveedor.value), remito: clean(f.remito.value), recibio: clean(f.recibio.value), items, obs: clean(f.obs.value), creado: new Date().toISOString() };
+    const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+    try {
+      await api("agregarIngreso", { registro: rec });
+      resetForm("ingreso"); toast("Ingreso guardado ✓");
+      load();
+    } catch(e){ handleWriteError(e); }
+    btn.disabled = !canWrite;
+  });
+
+  // ---------- borrar con confirmación ----------
+  document.addEventListener("click", async ev => {
+    const b = ev.target.closest("[data-del]"); if(!b || !db) return;
+    if(!b.classList.contains("confirm")){
+      b.classList.add("confirm"); b.textContent = "¿Borrar? Tocá de nuevo";
+      setTimeout(() => { b.classList.remove("confirm"); b.textContent = "Borrar"; }, 3500);
+      return;
+    }
+    b.disabled = true;
+    const [tipo, id] = b.dataset.del.split("/");
+    try { await api("borrar", { tipo, id }); toast("Registro borrado"); load(); } catch(e){ handleWriteError(e); b.disabled=false; }
+  });
+
+  // ---------- filtros ----------
+  const val = id => clean($(id).value);
+  function entregasFiltradas(){
+    const p=norm(val("#fe-persona")), s=norm(val("#fe-sector")), a=norm(val("#fe-articulo")), d=val("#fe-desde"), h=val("#fe-hasta");
+    return state.entregas.filter(r =>
+      (!p || norm(r.recibe).includes(p) || norm(r.entrega).includes(p)) &&
+      (!s || norm(r.sector).includes(s)) &&
+      (!a || (r.items||[]).some(it => norm(it.articulo).includes(a))) &&
+      (!d || (r.fecha||"").slice(0,10) >= d) && (!h || (r.fecha||"").slice(0,10) <= h));
+  }
+  function ingresosFiltrados(){
+    const p=norm(val("#fi-proveedor")), a=norm(val("#fi-articulo")), d=val("#fi-desde"), h=val("#fi-hasta");
+    return state.ingresos.filter(r =>
+      (!p || norm(r.proveedor).includes(p)) &&
+      (!a || (r.items||[]).some(it => norm(it.articulo).includes(a))) &&
+      (!d || (r.fecha||"") >= d) && (!h || (r.fecha||"").slice(0,10) <= h));
+  }
+  ["#fe-persona","#fe-sector","#fe-articulo","#fe-desde","#fe-hasta"].forEach(id => $(id).addEventListener("input", renderEntregas));
+  ["#fi-proveedor","#fi-articulo","#fi-desde","#fi-hasta"].forEach(id => $(id).addEventListener("input", renderIngresos));
+  ["#fs-q","#fs-min"].forEach(id => $(id).addEventListener("input", renderStock));
+  $("#fe-limpiar").addEventListener("click", () => { ["#fe-persona","#fe-sector","#fe-articulo","#fe-desde","#fe-hasta"].forEach(id=>$(id).value=""); renderEntregas(); });
+  $("#fi-limpiar").addEventListener("click", () => { ["#fi-proveedor","#fi-articulo","#fi-desde","#fi-hasta"].forEach(id=>$(id).value=""); renderIngresos(); });
+
+  // ---------- render ----------
+  const itemsHtml = items => `<ul>${(items||[]).map(it => `<li>${esc(fmtN(num(it.cantidad)))} ${esc(it.unidad||"")} — ${esc(it.articulo)}</li>`).join("")}</ul>`;
+  const delBtn = path => canWrite && db ? `<button class="small danger" data-del="${esc(path)}">Borrar</button>` : "";
+
+  function renderEntregas(){
+    const rows = entregasFiltradas();
+    const filtering = ["#fe-persona","#fe-sector","#fe-articulo","#fe-desde","#fe-hasta"].some(id => $(id).value);
+    if(filtering && rows.length){
+      const tot = new Map();
+      rows.forEach(r => (r.items||[]).forEach(it => { const k=norm(it.articulo)+"|"+norm(it.unidad); const e=tot.get(k)||{a:it.articulo,u:it.unidad,c:0}; e.c+=num(it.cantidad); tot.set(k,e); }));
+      $("#sum-entregas").innerHTML = `<div class="summary"><b>${rows.length}</b> entrega${rows.length>1?"s":""} con estos filtros. Total entregado:<ul>${[...tot.values()].sort((x,y)=>x.a.localeCompare(y.a,"es")).map(e=>`<li>${esc(fmtN(e.c))} ${esc(e.u)} — ${esc(e.a)}</li>`).join("")}</ul></div>`;
+    } else $("#sum-entregas").innerHTML = "";
+    $("#list-entregas").innerHTML = rows.length ? rows.map(r => `
+      <div class="rec"><div class="top"><div>
+        <div class="who">${esc(r.entrega)} → ${esc(r.recibe)}<span class="pill">${esc(r.sector)}</span></div>
+        <div class="meta">${esc(fmtDate(r.fecha))}</div></div>${delBtn("entregas/"+r._id)}</div>
+        ${itemsHtml(r.items)}${r.obs?`<div class="obs">${esc(r.obs)}</div>`:""}</div>`).join("")
+      : `<div class="empty">${state.entregas.length ? "No hay entregas con esos filtros." : "Todavía no hay entregas cargadas."}</div>`;
+  }
+  function renderIngresos(){
+    const rows = ingresosFiltrados();
+    $("#list-ingresos").innerHTML = rows.length ? rows.map(r => `
+      <div class="rec"><div class="top"><div>
+        <div class="who">${esc(r.proveedor)}${r.remito?`<span class="pill">Remito ${esc(r.remito)}</span>`:""}</div>
+        <div class="meta">${esc(fmtDate(r.fecha))}${r.recibio?` · Recibió ${esc(r.recibio)}`:""} · ${(r.items||[]).length} artículos</div></div>${delBtn("ingresos/"+r._id)}</div>
+        ${itemsHtml(r.items)}${r.obs?`<div class="obs">${esc(r.obs)}</div>`:""}</div>`).join("")
+      : `<div class="empty">${state.ingresos.length ? "No hay ingresos con esos filtros." : "Todavía no hay ingresos cargados."}</div>`;
+  }
+  function stockRows(){
+    const q = norm($("#fs-q").value);
+    return [...stockMap().values()].filter(s => !q || norm(s.nombre).includes(q)).map(s => ({...s, disp: s.entro - s.salio}));
+  }
+  function renderStock(){
+    const min = num($("#fs-min").value), rows = stockRows();
+    const all=[...stockMap().values()].map(x=>x.entro-x.salio);
+    $("#stats").innerHTML = `<div><b>${all.length}</b><span>artículos</span></div><div><b>${all.filter(d=>d>0&&d<=min).length}</b><span>quedan pocos</span></div><div><b>${all.filter(d=>d<=0).length}</b><span>sin stock</span></div>`;
+    $("#stock-table").innerHTML = rows.length ? rows.map(s => `<div class="stock-item ${s.disp<=0?"zero":(s.disp<=min?"low":"")}"><div><div class="nm">${esc(s.nombre)}</div><div class="sub">Ingresó ${fmtN(s.entro)} · Entregado ${fmtN(s.salio)}</div></div><div class="qty"><b>${fmtN(s.disp)}</b><span>${esc(s.unidad)}</span></div></div>`).join("") + `<p class="muted">Naranja: quedan pocos. Rojo: sin stock.</p>`
+      : `<div class="empty">Sin artículos todavía.</div>`;
+  }
+  function renderListas(){
+    const L = state.listas;
+    ["personal","sectores","proveedores"].forEach(k => {
+      $("#chips-"+k).innerHTML = L[k].length ? L[k].map(v => `<span class="chip">${esc(v)}${canWrite&&db?`<button data-rm="${k}" data-n="${esc(v)}" title="Quitar">×</button>`:""}</span>`).join("") : `<span class="muted">Vacío</span>`;
+    });
+    $("#chips-articulos").innerHTML = L.articulos.length ? L.articulos.map(a => `<span class="chip">${esc(a.nombre)} <span class="muted">(${esc(a.unidad||"unidad")})</span>${canWrite&&db?`<button data-rm="articulos" data-n="${esc(a.nombre)}" title="Quitar">×</button>`:""}</span>`).join("") : `<span class="muted">Vacío</span>`;
+  }
+  document.addEventListener("click", ev => {
+    const rm = ev.target.closest("[data-rm]");
+    if(rm){ rm.disabled = true; listaCambio("listaQuitar", { tipo: rm.dataset.rm, nombre: rm.dataset.n }); return; }
+    const add = ev.target.closest("[data-add]");
+    if(add){
+      const k = add.dataset.add, inp = $("#add-"+k), v = clean(inp.value); if(!v) return;
+      if(k === "articulos"){
+        const u = clean($("#add-articulos-u").value) || "unidad";
+        listaCambio("listaAgregar", { tipo: k, nombre: v, unidad: u });
+        $("#add-articulos-u").value = "";
+      } else listaCambio("listaAgregar", { tipo: k, nombre: v });
+      inp.value = "";
+    }
+  });
+  function renderAll(){ fillDatalists(); renderEntregas(); renderIngresos(); renderStock(); renderListas(); applyWriteState();
+    $$(".line .l-cant").forEach(i => i.dispatchEvent(new Event("input"))); }
+
+  // ---------- exportar ----------
+  function csv(rows){ return "﻿" + rows.map(r => r.map(c => { const s=String(c ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }).join(";")).join("\r\n"); }
+  const csvNum = n => String(Math.round(n*100)/100).replace(".", ",");
+  function buildExport(kind){
+    if(kind === "entregas") return csv([["Fecha","Hora","Entrega","Recibe","Sector","Artículo","Cantidad","Unidad","Observaciones"],
+      ...entregasFiltradas().flatMap(r => (r.items||[]).map(it => [fmtDate(r.fecha).slice(0,10), (r.fecha||"").slice(11,16), r.entrega, r.recibe, r.sector, it.articulo, csvNum(num(it.cantidad)), it.unidad, r.obs]))]);
+    if(kind === "ingresos") return csv([["Fecha","Proveedor","Remito","Recibió","Artículo","Cantidad","Unidad","Observaciones"],
+      ...ingresosFiltrados().flatMap(r => (r.items||[]).map(it => [fmtDate(r.fecha), r.proveedor, r.remito, r.recibio, it.articulo, csvNum(num(it.cantidad)), it.unidad, r.obs]))]);
+    return csv([["Artículo","Unidad","Ingresó","Entregado","Disponible"], ...stockRows().map(s => [s.nombre, s.unidad, csvNum(s.entro), csvNum(s.salio), csvNum(s.disp)])]);
+  }
+  $$("[data-export]").forEach(b => b.addEventListener("click", async () => {
+    const kind = b.dataset.export, data = buildExport(kind), filename = `${kind}-${today()}.csv`;
+    const url = URL.createObjectURL(new Blob([data], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }));
+
+  // ---------- carga desde Google Sheets ----------
+  const byFecha = (a,b) => (b.fecha||"").localeCompare(a.fecha||"") || (b.creado||"").localeCompare(a.creado||"");
+  let loading = null, firstLoad = true;
+  async function load(){
+    if(loading) return loading;
+    loading = (async () => {
+      try {
+        const j = await api("listar");
+        state.entregas = (j.entregas||[]).sort(byFecha);
+        state.ingresos = (j.ingresos||[]).sort(byFecha);
+        const L = j.listas || {};
+        state.listas = { personal: L.personal||[], sectores: L.sectores||[], proveedores: L.proveedores||[], articulos: L.articulos||[] };
+        db = true; banner("",""); firstLoad = false; renderAll();
+      } catch(e){
+        console.error(e);
+        if(e && e.code === "clave") pedirClave(getClave() ? "La clave no es correcta." : "");
+        else if(firstLoad) { banner("bad","No se pudo conectar con la planilla. Revisá la conexión a internet."); }
+        else toast("Sin conexión: los datos pueden no estar actualizados.");
+      } finally { loading = null; }
+    })();
+    return loading;
+  }
+  function pedirClave(msg){
+    $("#banner").innerHTML = `<div class="banner warn"><b>Ingresá la clave de acceso</b>${msg?`<br>${esc(msg)}`:""}
+      <div class="addrow" style="margin-top:8px"><input id="clave-in" type="password" autocomplete="current-password" placeholder="Clave"><button id="clave-ok">Entrar</button></div></div>`;
+    const go = () => { setClave(clean($("#clave-in").value)); banner("ok","Conectando…"); load(); };
+    $("#clave-ok").addEventListener("click", go);
+    $("#clave-in").addEventListener("keydown", e => { if(e.key==="Enter") go(); });
+  }
+
+  resetForm("entrega"); resetForm("ingreso"); renderAll();
+  if(!/^https:\/\/script\.google\.com\//.test(API_URL)){
+    banner("bad","Falta configurar la conexión: pegá la URL de Apps Script en API_URL, al principio del código de index.html.");
+  } else {
+    banner("ok","Conectando…"); load();
+    setInterval(() => { if(document.visibilityState === "visible" && db) load(); }, 30000);
+    document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && db) load(); });
+  }
+})();
+</script>
+</body>
+</html>
